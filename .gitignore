@@ -1,0 +1,6 @@
+# arinanoTouch
+*.tar.gz
+*.tar
+*.img
+rootfs/
+.DS_Store

@@ -1,0 +1,82 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# ═══════════════════════════════════════════════════════════════
+# arinanoTouch — Unified CLI
+# ═══════════════════════════════════════════════════════════════
+
+SCRIPTS="${HOME}/.arinanotouch/scripts"
+
+show_help() {
+    echo "arinanoTouch — Phosh mobile desktop on Termux"
+    echo ""
+    echo "Commands:"
+    echo "  start       Launch Phosh desktop"
+    echo "  stop        Stop everything"
+    echo "  status      System overview"
+    echo "  doctor      Full health-check"
+    echo "  backup      Backup to /sdcard/arinanotouch-backup"
+    echo "  restore     Restore from /sdcard backup"
+    echo "  snapshot    Manage snapshots (create|list|restore)"
+    echo "  update      Fresh image + re-apply user manifest"
+    echo "  rollback    Restore previous image"
+    echo "  install     Apply packages from user-manifest.yaml"
+    echo "  store       Launch APT Store GUI"
+    echo "  help        This message"
+}
+
+case "${1:-help}" in
+    start)
+        exec bash "${HOME}/start.sh"
+        ;;
+    stop)
+        exec bash "${HOME}/stop.sh"
+        ;;
+    status)
+        ${SCRIPTS}/status.sh 2>/dev/null || echo "Status: run 'arinanotouch doctor' for details"
+        ;;
+    doctor)
+        ${SCRIPTS}/doctor.sh 2>/dev/null || echo "Doctor not available."
+        ;;
+    backup)
+        ${SCRIPTS}/proot-backup.sh 2>/dev/null || echo "Backup script not found."
+        ;;
+    restore)
+        ${SCRIPTS}/proot-restore.sh 2>/dev/null || echo "Restore script not found."
+        ;;
+    snapshot)
+        case "${2:-help}" in
+            create) ${SCRIPTS}/user-snapshot.sh 2>/dev/null ;;
+            list)   ls "${HOME}/.arinanotouch/snapshots/" 2>/dev/null || echo "No snapshots." ;;
+            restore) SNAP="${3:-}"; [ -n "${SNAP}" ] && [ -d "${SNAP}" ] && rsync -a "${SNAP}/" "${HOME}/arinanotouch-root/" 2>/dev/null && echo "Restored." || echo "Usage: arinanotouch snapshot restore <path>" ;;
+            *)      echo "Usage: arinanotouch snapshot create|list|restore <path>" ;;
+        esac
+        ;;
+    update)
+        echo ">>> Updating arinanoTouch..."
+        ${SCRIPTS}/proot-setup.sh 2>/dev/null || {
+            echo "Re-bootstrapping..."
+            curl -sL https://raw.githubusercontent.com/arinadi/arinanoTouch/main/bootstrap.sh | bash
+        }
+        # Re-apply user manifest
+        if [ -f "${HOME}/.arinanotouch/user-manifest.yaml" ]; then
+            ${SCRIPTS}/manifest-apply.sh 2>/dev/null
+        fi
+        ;;
+    rollback)
+        ${SCRIPTS}/proot-rollback.sh 2>/dev/null || echo "Rollback failed."
+        ;;
+    install)
+        ${SCRIPTS}/manifest-apply.sh 2>/dev/null || echo "Manifest apply not available."
+        ;;
+    store)
+        proot-distro login arinanotouch --user admin -- bash ~/.arinanotouch/tools/apt-store.sh 2>/dev/null || \
+            echo "APT Store not available in container."
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        echo "arinanotouch: unknown command '${1}'"
+        echo "Run 'arinanotouch help' for commands."
+        exit 1
+        ;;
+esac
