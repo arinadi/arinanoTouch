@@ -135,9 +135,7 @@ else
     rm -rf ~/.termux/proot-distro/oci_layers/* 2>/dev/null || true
     rm -rf ~/.termux/proot-distro/oci_manifests/* 2>/dev/null || true
     
-    proot-distro install "$CONTAINER" \
-        --override-alias "$GHCR_IMAGE" \
-        --user admin
+    proot-distro install -n "$CONTAINER" "$GHCR_IMAGE"
 fi
 
 # ═══════════════════════════════════════════════════════════════
