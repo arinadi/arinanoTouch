@@ -1,110 +1,90 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ═══════════════════════════════════════════════════════════════
 # arinanoTouch — Start
-#  Unix socket (no TCP). MIT-SHM tidak jalan lewat TCP.
-#  Termux:X11 app HARUS dibuka manual sebelum script dijalankan.
+#  Preload semua (PA,virgl) → X11 → proot INSTANT connect
 # ═══════════════════════════════════════════════════════════════
 
 set -uo pipefail
-# set -e dihilangkan — script tidak akan langsung exit saat error
-# agar user bisa membaca pesan error sebelum terminal close
 
 echo "═══ arinanoTouch ═══"
 echo ""
 
-# ═══════════════════════════════════════════════════════════════
-# Dependencies
-# ═══════════════════════════════════════════════════════════════
 SOCK="/data/data/com.termux/files/usr/tmp/.X11-unix/X0"
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/data/data/com.termux/files/usr/tmp
 
 # ═══════════════════════════════════════════════════════════════
-# 1. PulseAudio
+# 1. PulseAudio + virgl (jalankan sebelum X11, supaya gak delay)
 # ═══════════════════════════════════════════════════════════════
-echo "[1/3] PulseAudio..."
+echo "[1] Preload..."
+
 pulseaudio --start --exit-idle-time=-1 2>/dev/null || true
 pactl load-module module-aaudio-sink 2>/dev/null || true
 pactl load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1 port=4713 2>/dev/null || true
-echo "  ✓"
 
-# ═══════════════════════════════════════════════════════════════
-# 2. X11 — reuse atau start
-# ═══════════════════════════════════════════════════════════════
-echo "[2/3] X11..."
-
-# Try reuse existing Termux:X11
-if [ -S "$SOCK" ]; then
-    echo "  ✓ using existing"
-else
-    echo "  starting..."
-
-    # Kill any old X11 process and clean lock files
-    pkill -9 -f termux-x11 2>/dev/null || true
-    sleep 0.5
-    rm -rf "${XDG_RUNTIME_DIR}/.X11-unix" 2>/dev/null || true
-    rm -f "${XDG_RUNTIME_DIR}/.X0-lock" 2>/dev/null || true
-
-    termux-x11 :0 -ac &
-    sleep 1
-    am start -n com.termux.x11/com.termux.x11.MainActivity 2>/dev/null || true
-
-    echo -n "  waiting for socket"
-    for i in $(seq 1 40); do
-        [ -S "$SOCK" ] && break
-        echo -n "."
-        sleep 0.3
-    done
-    echo ""
-fi
-
-if [ -S "$SOCK" ]; then
-    echo "  ✓ X11 ready"
-else
-    echo ""
-    echo "  ✗ Gagal connect ke Termux:X11"
-    echo ""
-    echo "  Perbaiki:"
-    echo "    1. am force-stop com.termux.x11"
-    echo "    2. Buka Termux:X11 app dari launcher"
-    echo "    3. Tunggu layar hitam + kursor X muncul"
-    echo "    4. Jangan close app-nya"
-    echo "    5. Jalankan ulang script ini"
-    exit 1
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# 3. virgl (optional)
-# ═══════════════════════════════════════════════════════════════
 VIRGL_MODE="none"
 rm -f /data/data/com.termux/files/usr/tmp/.virgl_test 2>/dev/null
-
 if command -v virgl_test_server_android &>/dev/null; then
     virgl_test_server_android &
-    sleep 1
+    sleep 0.5
     [ -S /data/data/com.termux/files/usr/tmp/.virgl_test ] && VIRGL_MODE="android"
 fi
 
-# ═══════════════════════════════════════════════════════════════
-# 4. Launch Phosh (Unix socket, no TCP)
-# ═══════════════════════════════════════════════════════════════
-echo "[3/3] Launching Phosh..."
-termux-wake-lock 2>/dev/null || true
+echo "  ✓ done"
 
-proot-distro login arinanotouch --user admin --shared-tmp -- env \
-    PATH=/usr/local/bin:/usr/bin:/bin \
-    DISPLAY=:0 \
-    XDG_RUNTIME_DIR=/tmp \
-    PULSE_SERVER=tcp:127.0.0.1:4713 \
-    VIRGL_MODE="${VIRGL_MODE}" \
-    HOME=/home/admin \
-    SHELL=/bin/bash \
-    /home/admin/.arinanotouch/launch-phosh.sh || {
-    echo ""
-    echo "═══ Phosh exited with error (code $?) ═══"
-}
+# ═══════════════════════════════════════════════════════════════
+# 2. X11 — start → INSTANT proot launch
+# ═══════════════════════════════════════════════════════════════
+echo "[2] X11..."
 
+# Clean stale
+pkill -9 -f termux-x11 2>/dev/null || true
+sleep 0.5
+rm -rf "${XDG_RUNTIME_DIR}/.X11-unix" 2>/dev/null || true
+rm -f "${XDG_RUNTIME_DIR}/.X0-lock" 2>/dev/null || true
+
+termux-x11 :0 -ac &
+sleep 1
+am start -n com.termux.x11/com.termux.x11.MainActivity 2>/dev/null || true
+
+# Poll for socket — once found, LAUNCH INSTANTLY (no echo, no sleep)
+for i in $(seq 1 40); do
+    if [ -S "$SOCK" ]; then
+        echo "  ✓ socket ready → launching..."
+
+        termux-wake-lock 2>/dev/null || true
+
+        proot-distro login arinanotouch --user admin --shared-tmp -- env \
+            PATH=/usr/local/bin:/usr/bin:/bin \
+            DISPLAY=:0 \
+            XDG_RUNTIME_DIR=/tmp \
+            PULSE_SERVER=tcp:127.0.0.1:4713 \
+            VIRGL_MODE="${VIRGL_MODE}" \
+            HOME=/home/admin \
+            SHELL=/bin/bash \
+            /home/admin/.arinanotouch/launch-phosh.sh || {
+            echo ""
+            echo "═══ Phosh error ═══"
+        }
+
+        echo ""
+        echo "═══ arinanoTouch session ended ═══"
+        echo "Tekan Enter..."
+        read -r _ 2>/dev/null || true
+        exit 0
+    fi
+    sleep 0.3
+done
+
+# Socket never appeared
 echo ""
-echo "═══ arinanoTouch session ended ═══"
-echo "Tekan Enter untuk close..."
+echo "  ✗ Socket tidak muncul"
+echo ""
+echo "  Perbaiki:"
+echo "    1. am force-stop com.termux.x11"
+echo "    2. Buka Termux:X11 app manual"
+echo "    3. Tunggu layar hitam"
+echo "    4. Jangan close app"
+echo "Tekan Enter..."
 read -r _ 2>/dev/null || true
+exit 1
