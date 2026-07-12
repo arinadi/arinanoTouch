@@ -52,7 +52,7 @@ VIRGL_PID=""
 if command -v virgl_test_server_android &>/dev/null; then
     # Tier 1 — angle-vulkan (optimal for Xclipse/RDNA2)
     LD_LIBRARY_PATH="${ANGLE_DIR}" \
-        virgl_test_server_android --angle-vulkan &>/dev/null &
+        virgl_test_server_android &>/dev/null &
     VIRGL_PID=$!
     VIRGL_MODE="angle-vulkan"
     echo "  • virgl: angle-vulkan ✓"
@@ -72,6 +72,7 @@ export DISPLAY=:0
 export XDG_RUNTIME_DIR="${TMPDIR:-/data/data/com.termux/files/usr/tmp}"
 
 # Clean stale socket dir (critical: termux-x11 fails silently if dir exists but empty)
+rm -f "${TMPDIR:-/data/data/com.termux/files/usr/tmp}/.virgl_test" 2>/dev/null || true
 rm -rf "${XDG_RUNTIME_DIR}/.X11-unix" "${XDG_RUNTIME_DIR}/.X0-lock" 2>/dev/null
 
 termux-x11 :0 -ac &

@@ -32,6 +32,7 @@ done
 sleep 1
 
 rm -rf /data/data/com.termux/files/usr/tmp/.X11-unix 2>/dev/null || true
+rm -f /data/data/com.termux/files/usr/tmp/.virgl_test 2>/dev/null || true
 rm -f /data/data/com.termux/files/usr/tmp/.X0-lock 2>/dev/null || true
 log "  clean done"
 
@@ -63,7 +64,7 @@ VIRGL_MODE="none"
 if command -v virgl_test_server_android &>/dev/null; then
     log "  found virgl_test_server_android"
     LD_LIBRARY_PATH="/data/data/com.termux/files/usr/lib" \
-        virgl_test_server_android --angle-vulkan >> "$LOG" 2>&1 &
+        virgl_test_server_android >> "$LOG" 2>&1 &
     VIRGL_PID=$!
     VIRGL_MODE="angle-vulkan"
     sleep 0.5
@@ -147,7 +148,7 @@ proot-distro login arinanotouch --user admin --shared-tmp -- env \
     PULSE_SERVER=tcp:127.0.0.1:4713 \
     VIRGL_MODE="${VIRGL_MODE}" \
     HOME=/home/admin \
-    /home/admin/.arinanotouch/launch-phosh.sh
+    /home/admin/.arinanotouch/launch-phosh-debug.sh
 
 log ""
 log "── Phosh session ended ──"
