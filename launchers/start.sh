@@ -59,7 +59,7 @@ termux-wake-lock
 # am start di background
 am start -n com.termux.x11/com.termux.x11.MainActivity &>/dev/null &
 
-# Poll socket — 3 detik (sama seperti arinanoX)
+# Poll socket — 3 detik
 for i in $(seq 1 30); do
     [ -S "$SOCK" ] && break
     sleep 0.1
@@ -67,6 +67,16 @@ done
 
 if [ -S "$SOCK" ]; then
     echo "  ✓ X11 ready ($((i*100))ms)"
+    # Holder — jaga socket tetap hidup selama proot startup
+    HOLDER="$(cd "$(dirname "$0")" && pwd)/x11-holder.py"
+    if [ -f "$HOLDER" ]; then
+        python3 "$HOLDER" "$SOCK" &
+        HOLDER_PID=$!
+        for h in $(seq 1 10); do
+            [ -f "${SOCK}.holder" ] && break
+            sleep 0.1
+        done
+    fi
 else
     echo "  ⚠ X11 timeout — lanjut anyway"
 fi
@@ -105,11 +115,15 @@ else
         rm -f /tmp/dbus-* 2>/dev/null
         mkdir -p /tmp/runtime-admin
         /home/admin/.arinanotouch/launch-phosh.sh
-    " || {
+    "  || {
         echo ""
         echo "═══ Phosh error ═══"
     }
 fi
+
+# Cleanup holder
+kill "${HOLDER_PID:-}" 2>/dev/null || true
+rm -f "${SOCK}.holder" 2>/dev/null || true
 
 echo ""
 echo "═══ arinanoTouch ended ═══"
