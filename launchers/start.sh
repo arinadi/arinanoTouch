@@ -5,7 +5,9 @@
 #  Termux:X11 app HARUS dibuka manual sebelum script dijalankan.
 # ═══════════════════════════════════════════════════════════════
 
-set -euo pipefail
+set -uo pipefail
+# set -e dihilangkan — script tidak akan langsung exit saat error
+# agar user bisa membaca pesan error sebelum terminal close
 
 echo "═══ arinanoTouch ═══"
 echo ""
@@ -89,7 +91,12 @@ proot-distro login arinanotouch --user admin --shared-tmp -- env \
     VIRGL_MODE="${VIRGL_MODE}" \
     HOME=/home/admin \
     SHELL=/bin/bash \
-    /home/admin/.arinanotouch/launch-phosh.sh
+    /home/admin/.arinanotouch/launch-phosh.sh || {
+    echo ""
+    echo "═══ Phosh exited with error (code $?) ═══"
+}
 
 echo ""
 echo "═══ arinanoTouch session ended ═══"
+echo "Tekan Enter untuk close..."
+read -r _ 2>/dev/null || true
