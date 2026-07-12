@@ -1,59 +1,85 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ═══════════════════════════════════════════════════════════════
 # arinanoTouch — Start
-#  PulseAudio + X11 (parallel) → proot immediately
+#  Unix socket (no TCP). MIT-SHM tidak jalan lewat TCP.
+#  Termux:X11 app HARUS dibuka manual sebelum script dijalankan.
 # ═══════════════════════════════════════════════════════════════
 
 set -euo pipefail
 
 echo "═══ arinanoTouch ═══"
+echo ""
 
-# ── Clean stale (except X11) ──────────────────────────────────
-for p in openbox cage phoc phosh virgl_test; do
-    pgrep -f "$p" 2>/dev/null | xargs kill -9 2>/dev/null || true
-done
-sleep 0.3
-
-# ── PulseAudio (background, before X11) ───────────────────────
-pulseaudio --start --exit-idle-time=-1 2>/dev/null &
-pactl load-module module-aaudio-sink 2>/dev/null || true
-pactl load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1 port=4713 2>/dev/null || true
-echo "  ✓ PulseAudio"
-
-# ── X11 ───────────────────────────────────────────────────────
-echo -n "  X11..."
+# ═══════════════════════════════════════════════════════════════
+# Dependencies
+# ═══════════════════════════════════════════════════════════════
 SOCK="/data/data/com.termux/files/usr/tmp/.X11-unix/X0"
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/data/data/com.termux/files/usr/tmp
 
-# Start X11 ONLY if not already running with socket
-if [ ! -S "$SOCK" ]; then
+# ═══════════════════════════════════════════════════════════════
+# 1. PulseAudio
+# ═══════════════════════════════════════════════════════════════
+echo "[1/3] PulseAudio..."
+pulseaudio --start --exit-idle-time=-1 2>/dev/null || true
+pactl load-module module-aaudio-sink 2>/dev/null || true
+pactl load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1 port=4713 2>/dev/null || true
+echo "  ✓"
+
+# ═══════════════════════════════════════════════════════════════
+# 2. X11 — reuse atau start
+# ═══════════════════════════════════════════════════════════════
+echo "[2/3] X11..."
+
+# Try reuse existing Termux:X11 that user manually opened
+if [ -S "$SOCK" ]; then
+    echo "  ✓ using existing"
+else
+    echo "  starting..."
     rm -rf "${XDG_RUNTIME_DIR}/.X11-unix" 2>/dev/null || true
     termux-x11 :0 -ac &
     sleep 1
     am start -n com.termux.x11/com.termux.x11.MainActivity 2>/dev/null || true
-    for i in $(seq 1 20); do
-        [ -S "$SOCK" ] && break
-        sleep 0.2
-    done
-fi
-[ -S "$SOCK" ] && echo " ✓" || { echo " ✗ FAIL"; exit 1; }
 
-# ── virgl (optional, background) ──────────────────────────────
+    echo -n "  waiting for socket"
+    for i in $(seq 1 30); do
+        [ -S "$SOCK" ] && break
+        echo -n "."
+        sleep 0.3
+    done
+    echo ""
+fi
+
+if [ -S "$SOCK" ]; then
+    echo "  ✓ X11 ready"
+else
+    echo ""
+    echo "  ✗ Gagal connect ke Termux:X11"
+    echo ""
+    echo "  Cara manual:"
+    echo "    1. Buka Termux:X11 app dari launcher"
+    echo "    2. Pastikan layar hitam muncul"
+    echo "    3. Jalankan ulang script ini"
+    exit 1
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# 3. virgl (optional)
+# ═══════════════════════════════════════════════════════════════
 VIRGL_MODE="none"
 rm -f /data/data/com.termux/files/usr/tmp/.virgl_test 2>/dev/null
-command -v virgl_test_server_android &>/dev/null && {
+
+if command -v virgl_test_server_android &>/dev/null; then
     virgl_test_server_android &
-    sleep 0.5
+    sleep 1
     [ -S /data/data/com.termux/files/usr/tmp/.virgl_test ] && VIRGL_MODE="android"
-}
+fi
 
-# ── Launch proot IMMEDIATELY ──────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# 4. Launch Phosh (Unix socket, no TCP)
+# ═══════════════════════════════════════════════════════════════
+echo "[3/3] Launching Phosh..."
 termux-wake-lock 2>/dev/null || true
-
-echo ""
-echo "═══ Launching Phosh ═══"
-echo ""
 
 proot-distro login arinanotouch --user admin --shared-tmp -- env \
     PATH=/usr/local/bin:/usr/bin:/bin \
@@ -66,4 +92,4 @@ proot-distro login arinanotouch --user admin --shared-tmp -- env \
     /home/admin/.arinanotouch/launch-phosh.sh
 
 echo ""
-echo "═══ Session ended ═══"
+echo "═══ arinanoTouch session ended ═══"
