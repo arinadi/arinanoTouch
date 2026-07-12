@@ -33,16 +33,24 @@ rm -f /tmp/.X*-lock /tmp/.X11-unix/* 2>/dev/null || true
 
 # ── Verify X11 connection ─────────────────────────────────────
 echo -n "  X11 check: "
-if python3 -c "
-import socket; s=socket.socket(socket.AF_UNIX); s.settimeout(2)
+if [ -S "/tmp/.X11-unix/X0" ]; then
+    if python3 -c "
+import socket; s=socket.socket(socket.AF_UNIX); s.settimeout(3)
 s.connect('/tmp/.X11-unix/X0')
 s.send(b'l\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-d=s.recv(8); print('OK'); s.close()
+d=s.recv(8)
+print('OK')
+s.close()
 " 2>/dev/null; then
-    :
+        :
+    else
+        echo "CONNECT FAIL — socket $([ -S /tmp/.X11-unix/X0 ] && echo exists || echo MISSING)"
+        echo "  holder marker: $([ -f /tmp/.X11-unix/X0.holder ] && echo YES || echo NO)"
+        exit 1
+    fi
 else
-    echo "FAIL — cannot connect to X11 socket"
-    echo "  socket: $(ls /tmp/.X11-unix/X0 2>/dev/null || echo MISSING)"
+    echo "MISSING"
+    echo "  socket tidak ditemukan"
     exit 1
 fi
 

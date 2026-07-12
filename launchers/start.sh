@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ═══════════════════════════════════════════════════════════════
 # arinanoTouch — Start
-#  Preload semua (PA,virgl) → X11 → proot INSTANT connect
+#  X11 socket holder prevents XWayland timeout
 # ═══════════════════════════════════════════════════════════════
 
 set -uo pipefail
@@ -13,8 +13,26 @@ SOCK="/data/data/com.termux/files/usr/tmp/.X11-unix/X0"
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/data/data/com.termux/files/usr/tmp
 
+HOLDER="$(cd "$(dirname "$0")" && pwd)/x11-holder.py"
+
 # ═══════════════════════════════════════════════════════════════
-# 1. PulseAudio + virgl (jalankan sebelum X11, supaya gak delay)
+# 0. Check Phantom Process Killer
+# ═══════════════════════════════════════════════════════════════
+if [ -f /system/bin/device_config ]; then
+    MAX_PHANTOM=$(/system/bin/device_config get activity_manager max_phantom_processes 2>/dev/null || echo "")
+    if [ "$MAX_PHANTOM" != "2147483647" ]; then
+        echo "⚠  Phantom Process Killer masih aktif!"
+        echo "   Jalankan perintah ADB ini di PC/laptop:"
+        echo ""
+        echo "   adb shell \"/system/bin/device_config set_sync_disabled_for_tests persistent\""
+        echo "   adb shell \"/system/bin/device_config put activity_manager max_phantom_processes 2147483647\""
+        echo "   adb shell settings put global settings_enable_monitor_phantom_procs false"
+        echo ""
+    fi
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# 1. PulseAudio + virgl
 # ═══════════════════════════════════════════════════════════════
 echo "[1] Preload..."
 
@@ -33,7 +51,7 @@ fi
 echo "  ✓ done"
 
 # ═══════════════════════════════════════════════════════════════
-# 2. X11 — start → INSTANT proot launch
+# 2. X11 — start + holder + proot
 # ═══════════════════════════════════════════════════════════════
 echo "[2] X11..."
 
@@ -42,16 +60,28 @@ pkill -9 -f termux-x11 2>/dev/null || true
 sleep 0.5
 rm -rf "${XDG_RUNTIME_DIR}/.X11-unix" 2>/dev/null || true
 rm -f "${XDG_RUNTIME_DIR}/.X0-lock" 2>/dev/null || true
+rm -f "${SOCK}.holder" 2>/dev/null || true
 
 termux-x11 :0 -ac &
 sleep 1
 am start -n com.termux.x11/com.termux.x11.MainActivity 2>/dev/null || true
 
-# Poll for socket — once found, LAUNCH INSTANTLY (no echo, no sleep)
-for i in $(seq 1 40); do
+# Poll for socket — start holder to keep it alive
+for i in $(seq 1 60); do
     if [ -S "$SOCK" ]; then
-        echo "  ✓ socket ready → launching..."
+        echo "  socket ready → attaching holder..."
 
+        # Start holder to prevent XWayland timeout
+        python3 "$HOLDER" "$SOCK" &
+        HOLDER_PID=$!
+
+        # Wait for holder to connect (check for .holder marker file)
+        for h in $(seq 1 20); do
+            [ -f "${SOCK}.holder" ] && break
+            sleep 0.1
+        done
+
+        echo "  launching..."
         termux-wake-lock 2>/dev/null || true
 
         proot-distro login arinanotouch --user admin --shared-tmp -- env \
@@ -66,6 +96,10 @@ for i in $(seq 1 40); do
             echo ""
             echo "═══ Phosh error ═══"
         }
+
+        # Clean up holder
+        kill $HOLDER_PID 2>/dev/null || true
+        rm -f "${SOCK}.holder" 2>/dev/null || true
 
         echo ""
         echo "═══ arinanoTouch session ended ═══"
