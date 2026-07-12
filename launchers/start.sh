@@ -76,16 +76,20 @@ rm -rf "${XDG_RUNTIME_DIR}/.X11-unix" "${XDG_RUNTIME_DIR}/.X0-lock" 2>/dev/null
 
 termux-x11 :0 -ac &
 X11_PID=$!
+sleep 1
 
-# Poll for X11 socket (parallel optimization)
-for i in $(seq 1 30); do
-    [ -S "${XDG_RUNTIME_DIR}/.X11-unix/X0" ] && break
-    sleep 0.1
-done
-echo "  • X11: :0 ready"
-
-# Activate Termux:X11 app (required — X server won't accept connections without this)
+# Activate Termux:X11 app (required — X server needs the app activity to bind socket)
 am start -n com.termux.x11/com.termux.x11.MainActivity 2>/dev/null || true
+sleep 2
+
+# Verify socket exists
+if [ -S "${XDG_RUNTIME_DIR}/.X11-unix/X0" ]; then
+    echo "  • X11: :0 ready"
+else
+    echo "  ⚠ X11 socket not found — retrying..."
+    sleep 2
+    [ -S "${XDG_RUNTIME_DIR}/.X11-unix/X0" ] && echo "  • X11: :0 ready" || echo "  ✗ X11 failed"
+fi
 
 # ── Wake lock ───────────────────────────────────────────
 termux-wake-lock 2>/dev/null || true
@@ -99,11 +103,10 @@ echo ">>> [2/4] Launching proot..."
 
 export -n DISPLAY XDG_RUNTIME_DIR
 
-proot-distro login arinanotouch --user admin --shared-tmp -- bash -c '
-export DISPLAY="'"${DISPLAY}"'"
-export XDG_RUNTIME_DIR="'"${XDG_RUNTIME_DIR}"'"
-export PULSE_SERVER=tcp:127.0.0.1:4713
-export VIRGL_MODE="'"${VIRGL_MODE}"'"
-export HOME=/home/admin
-/home/admin/.arinanotouch/launch-phosh.sh
-'
+proot-distro login arinanotouch --user admin --shared-tmp -- env \
+    DISPLAY="${DISPLAY}" \
+    XDG_RUNTIME_DIR=/tmp \
+    PULSE_SERVER=tcp:127.0.0.1:4713 \
+    VIRGL_MODE="${VIRGL_MODE}" \
+    HOME=/home/admin \
+    /home/admin/.arinanotouch/launch-phosh.sh
