@@ -24,8 +24,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dbus-x11 pulseaudio-utils netcat-openbsd x11-xserver-utils \
     # Browser (mobile-config for touch-friendly UI)
     firefox-esr firefox-esr-mobile-config \
-    # Fonts
+    # Fonts + backgrounds + gsettings schemas
     fonts-noto fonts-noto-color-emoji \
+    gnome-settings-daemon-common gnome-backgrounds \
     # GPU / GL tools
     mesa-utils glmark2 libgl1 librsvg2-common \
     # Right-click + utilities

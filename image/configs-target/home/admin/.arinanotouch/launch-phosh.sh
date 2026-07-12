@@ -11,6 +11,9 @@ export DISPLAY="${DISPLAY:-:0}"
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 export PULSE_SERVER="${PULSE_SERVER:-tcp:127.0.0.1:4713}"
 
+# Ensure XDG_RUNTIME_DIR exists
+mkdir -p "$XDG_RUNTIME_DIR"
+
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
@@ -46,7 +49,8 @@ sleep 1.5
 echo "  • Openbox: ${OPENBOX_PID}"
 
 # Step 2 — Cage (Wayland-in-X11, sockets wlroots into X11)
-cage phoc -E '/usr/libexec/phosh' -U &
+#    cage -- ensures phoc args (-E, -U) are passed through correctly
+cage -- phoc -E '/usr/libexec/phosh' &
 CAGE_PID=$!
 sleep 2
 echo "  • Cage+Phoc+Phosh: ${CAGE_PID}"

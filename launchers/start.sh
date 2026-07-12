@@ -71,6 +71,9 @@ fi
 export DISPLAY=:0
 export XDG_RUNTIME_DIR="${TMPDIR:-/data/data/com.termux/files/usr/tmp}"
 
+# Clean stale socket dir (critical: termux-x11 fails silently if dir exists but empty)
+rm -rf "${XDG_RUNTIME_DIR}/.X11-unix" "${XDG_RUNTIME_DIR}/.X0-lock" 2>/dev/null
+
 termux-x11 :0 -ac &
 X11_PID=$!
 
@@ -80,6 +83,9 @@ for i in $(seq 1 30); do
     sleep 0.1
 done
 echo "  • X11: :0 ready"
+
+# Activate Termux:X11 app (required — X server won't accept connections without this)
+am start -n com.termux.x11/com.termux.x11.MainActivity 2>/dev/null || true
 
 # ── Wake lock ───────────────────────────────────────────
 termux-wake-lock 2>/dev/null || true
@@ -93,10 +99,11 @@ echo ">>> [2/4] Launching proot..."
 
 export -n DISPLAY XDG_RUNTIME_DIR
 
-proot-distro login arinanotouch --user admin --shared-tmp -- \
-    env DISPLAY="${DISPLAY}" \
-        XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" \
-        PULSE_SERVER=tcp:127.0.0.1:4713 \
-        VIRGL_MODE="${VIRGL_MODE}" \
-        HOME="/home/admin" \
-    /home/admin/.arinanotouch/launch-phosh.sh
+proot-distro login arinanotouch --user admin --shared-tmp -- bash -c '
+export DISPLAY="'"${DISPLAY}"'"
+export XDG_RUNTIME_DIR="'"${XDG_RUNTIME_DIR}"'"
+export PULSE_SERVER=tcp:127.0.0.1:4713
+export VIRGL_MODE="'"${VIRGL_MODE}"'"
+export HOME=/home/admin
+/home/admin/.arinanotouch/launch-phosh.sh
+'
