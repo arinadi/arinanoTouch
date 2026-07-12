@@ -33,16 +33,16 @@ fi
 # ═══════════════════════════════════════════════════════════════
 echo "[1] Preload..."
 
-pulseaudio --start --exit-idle-time=-1 2>/dev/null || true
-pactl load-module module-aaudio-sink 2>/dev/null || true
-pactl load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1 port=4713 2>/dev/null || true
+# PulseAudio — timeout 2s
+timeout 2 bash -c '
+    pulseaudio --start --exit-idle-time=-1 2>/dev/null || true
+    pactl load-module module-aaudio-sink 2>/dev/null || true
+    pactl load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1 port=4713 2>/dev/null || true
+' 2>/dev/null || echo "  ⚠ pulse timeout"
 
-VIRGL_MODE="none"
-rm -f "${TMPDIR}/.virgl_test" 2>/dev/null
+# virgl — background, cek socket nanti pas launch
 if command -v virgl_test_server_android &>/dev/null; then
     virgl_test_server_android &>/dev/null &
-    sleep 0.5
-    [ -S "${TMPDIR}/.virgl_test" ] && VIRGL_MODE="android"
 fi
 echo "  ✓"
 
@@ -72,11 +72,12 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# 3. Launch Phosh
+# 3. Launch Phosh — deteksi virgl realtime
 # ═══════════════════════════════════════════════════════════════
 echo "[3] Phosh..."
 
-if [ "$VIRGL_MODE" != "none" ]; then
+# Deteksi virgl (cek socket)
+if [ -S "${TMPDIR}/.virgl_test" ]; then
     echo "  GPU: virpipe"
     proot-distro login arinanotouch --shared-tmp -- su - admin -c "
         export DISPLAY=:0
