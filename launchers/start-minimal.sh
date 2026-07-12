@@ -85,7 +85,10 @@ sleep 1
 pgrep openbox && echo '  ✓ openbox' || { echo '  ✗ openbox failed'; exit 1; }
 
 echo '  → Starting cage + phoc + phosh...'
-cage -d -- phoc -E /usr/libexec/phosh &
+# WLR_X11_NO_MITSHM=1: disable shared memory (not available over TCP)
+# WLR_X11_OUTPUT: force output name for layout
+WLR_X11_NO_MITSHM=1 \
+    cage -d -- phoc -E /usr/libexec/phosh &
 sleep 4
 
 echo ''
