@@ -33,18 +33,24 @@ echo "  ✓"
 # ═══════════════════════════════════════════════════════════════
 echo "[2/3] X11..."
 
-# Try reuse existing Termux:X11 that user manually opened
+# Try reuse existing Termux:X11
 if [ -S "$SOCK" ]; then
     echo "  ✓ using existing"
 else
     echo "  starting..."
+
+    # Kill any old X11 process and clean lock files
+    pkill -9 -f termux-x11 2>/dev/null || true
+    sleep 0.5
     rm -rf "${XDG_RUNTIME_DIR}/.X11-unix" 2>/dev/null || true
+    rm -f "${XDG_RUNTIME_DIR}/.X0-lock" 2>/dev/null || true
+
     termux-x11 :0 -ac &
     sleep 1
     am start -n com.termux.x11/com.termux.x11.MainActivity 2>/dev/null || true
 
     echo -n "  waiting for socket"
-    for i in $(seq 1 30); do
+    for i in $(seq 1 40); do
         [ -S "$SOCK" ] && break
         echo -n "."
         sleep 0.3
@@ -58,10 +64,12 @@ else
     echo ""
     echo "  ✗ Gagal connect ke Termux:X11"
     echo ""
-    echo "  Cara manual:"
-    echo "    1. Buka Termux:X11 app dari launcher"
-    echo "    2. Pastikan layar hitam muncul"
-    echo "    3. Jalankan ulang script ini"
+    echo "  Perbaiki:"
+    echo "    1. am force-stop com.termux.x11"
+    echo "    2. Buka Termux:X11 app dari launcher"
+    echo "    3. Tunggu layar hitam + kursor X muncul"
+    echo "    4. Jangan close app-nya"
+    echo "    5. Jalankan ulang script ini"
     exit 1
 fi
 
