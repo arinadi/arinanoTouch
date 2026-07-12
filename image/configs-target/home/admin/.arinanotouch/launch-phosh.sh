@@ -7,12 +7,32 @@
 set -uo pipefail
 
 # ── Fallback values ───────────────────────────────────────────
+export PATH="${PATH:-/usr/local/bin:/usr/bin:/bin}"
 export DISPLAY="${DISPLAY:-:0}"
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 export PULSE_SERVER="${PULSE_SERVER:-tcp:127.0.0.1:4713}"
 
 # Ensure XDG_RUNTIME_DIR exists
 mkdir -p "$XDG_RUNTIME_DIR"
+
+# ── X11 connection test ──────────────────────────────────────
+echo "  • Testing X11 connection..."
+if python3 -c "
+import socket, struct
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.settimeout(2)
+s.connect('/tmp/.X11-unix/X0')
+s.send(b'l\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+data = s.recv(8)
+print(f'OK: {data.hex()}')
+s.close()
+" 2>/dev/null; then
+    echo "  ✓ X11 connected"
+else
+    echo "  ✗ X11 connection FAILED — socket exists but no response"
+    echo "  Make sure Termux:X11 app is open and in foreground"
+    exit 1
+fi
 
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
