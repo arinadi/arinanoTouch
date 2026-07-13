@@ -4,16 +4,26 @@
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
 
-PREV="arinanotouch-prev"
+CONTAINER="arinanotouch"
+PREV="${CONTAINER}-prev"
+CONTAINERS_DIR="/data/data/com.termux/files/usr/var/lib/proot-distro/containers"
 
 echo ">>> Rolling back to ${PREV}..."
 
-if ! proot-distro list 2>/dev/null | grep -q "$PREV"; then
+if [ ! -d "${CONTAINERS_DIR}/${PREV}" ]; then
     echo "  ✗ No backup found (${PREV} missing)."
     exit 1
 fi
 
-proot-distro remove arinanotouch 2>/dev/null || true
-proot-distro rename "$PREV" arinanotouch
+# Remove current
+if [ -d "${CONTAINERS_DIR}/${CONTAINER}" ]; then
+    echo "  • Removing current ${CONTAINER}..."
+    rm -rf "${CONTAINERS_DIR}/${CONTAINER}"
+fi
+
+# Restore prev → current
+echo "  • Restoring ${PREV} → ${CONTAINER}..."
+mv "${CONTAINERS_DIR}/${PREV}" "${CONTAINERS_DIR}/${CONTAINER}"
 
 echo "  ✓ Rolled back to ${PREV}."
+echo "  Start: arinanotouch start"
