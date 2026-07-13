@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ── Layer 2: SXMO SHELL (X11/dwm) + BROWSER ──────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sxmo-utils \
-    dwm dmenu stterm lisgd svkbd-x11 wvkbd \
+    dwm dmenu stterm lisgd wvkbd \
     dbus-x11 pulseaudio-utils netcat-openbsd x11-xserver-utils \
     firefox-esr firefox-esr-mobile-config \
     fonts-noto fonts-noto-color-emoji \
