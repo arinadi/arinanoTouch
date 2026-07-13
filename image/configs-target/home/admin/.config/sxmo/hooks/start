@@ -1,0 +1,33 @@
+#!/bin/sh
+# arinanoTouch — proot environment fixes (user hook, tidak di-migrate)
+#
+# NOTE: File ini ditaruh di ~/.config/sxmo/hooks/start
+# SXMO akan menjalankannya saat startup, SETELAH sxmo_migrate selesai.
+# Dengan demikian, env vars di sini tidak akan di-overwrite migrasi.
+
+# Fix runtime dirs
+mkdir -p /run/user/1000 2>/dev/null
+chown admin:admin /run/user/1000 2>/dev/null || true
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+
+# PulseAudio over TCP
+export PULSE_SERVER="${PULSE_SERVER:-tcp:127.0.0.1:4713}"
+
+# GPU: virpipe (sesuai flag --angle-vulkan)
+export GALLIUM_DRIVER="${GALLIUM_DRIVER:-virpipe}"
+export MESA_GL_VERSION_OVERRIDE="${MESA_GL_VERSION_OVERRIDE:-4.1COMPAT}"
+export MESA_GLES_VERSION_OVERRIDE="${MESA_GLES_VERSION_OVERRIDE:-3.1}"
+export MESA_NO_ERROR=1
+export MESA_BACK_BUFFER=pixmap
+export NO_AT_BRIDGE=1
+
+# Start sxhkd (pengganti lisgd gesture)
+# lisgd butuh /dev/input/touchscreen yang tidak ada di proot
+if ! pgrep -x sxhkd >/dev/null 2>&1; then
+    sxhkd &
+fi
+
+# Fix dbus
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=/tmp/dbus-session"
+fi

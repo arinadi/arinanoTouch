@@ -119,18 +119,20 @@ SXMO menggunakan **svkbd**/**wvkbd** sebagai on-screen keyboard bawaan, diaktifk
 `Ctrl+Alt+R` triggers right-click via xdotool (auto-installed).
 
 Add to `~/.termux/termux.properties`:
-```properties
-extra-keys = : [
+```
+extra-keys = [
   ['ESC', '/', {key: '-', popup: '|'}, 'HOME', 'UP', 'END', 'PGUP', {macro: "CTRL ALT r", display: "🖱️R"}],
   ['TAB', 'CTRL', 'ALT', 'LEFT', 'DOWN', 'RIGHT', 'PGDN', 'KEYBOARD']
 ]
 ```
 
 Dengan SXMO menu key:
-```properties
-extra-keys = : [
-  ['ESC', {macro: "SUPER d", display: "📋"}, {key: '-', popup: '|'}, 'HOME', 'UP', 'END', 'PGUP', 'KEYBOARD'],
-  ['TAB', 'CTRL', 'ALT', 'LEFT', 'DOWN', 'RIGHT', 'PGDN', {macro: "SUPER Return", display: "🖥️"}]
+```
+extra-keys = [
+  ['ESC', {macro: "SUPER d", display: "📋"}, {key: '-', popup: '|'},
+ 'HOME', 'UP', 'END', 'PGUP', 'KEYBOARD'],
+  ['TAB', 'CTRL', 'ALT', 'LEFT', 'DOWN', 'RIGHT', 'PGDN', {macro: "SUPER
+ Return", display: "🖥️"}]
 ]
 ```
 

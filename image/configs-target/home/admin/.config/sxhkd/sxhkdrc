@@ -1,0 +1,37 @@
+# arinanoTouch — SXMO hotkeys (pengganti lisgd gestures)
+#
+# lisgd tidak bisa jalan di proot karena butuh /dev/input/touchscreen
+# Solusi: sxhkd (simple X hotkey daemon)
+#
+# Modifier key mapping:
+#   super  = Super/Windows key (Mod4)
+#   alt    = Alt (Mod1)
+#   control = Control
+
+# SXMO Main Menu
+super + d
+    sxmo_appmenu.sh
+
+# Terminal
+super + Return
+    st
+
+# Close active window
+super + q
+    xdotool getactivewindow windowkill
+
+# Next window
+super + Tab
+    xdotool key Super_L+Tab
+
+# Dmenu (app launcher)
+super + space
+    sxmo_dmenu.sh
+
+# Audio controls (butuh mapping dari Android side)
+XF86AudioRaiseVolume
+    sxmo_audio.sh raise
+XF86AudioLowerVolume
+    sxmo_audio.sh lower
+XF86AudioMute
+    sxmo_audio.sh toggle

@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sxmo-utils \
     dwm dmenu stterm lisgd wvkbd \
+    sxhkd feh dunst x11-utils xdg-utils \
     dbus-x11 pulseaudio-utils netcat-openbsd x11-xserver-utils \
     firefox-esr firefox-esr-mobile-config \
     fonts-noto fonts-noto-color-emoji \
@@ -40,6 +41,7 @@ COPY configs-target/home/ /home/
 
 RUN chown -R admin:admin /home/admin && \
     chmod +x /home/admin/.arinanotouch/tools/*.sh && \
+    chmod +x /home/admin/.config/sxmo/hooks/* && \
     sed -i 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 
 ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
