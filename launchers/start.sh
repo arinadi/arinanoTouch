@@ -133,5 +133,7 @@ rm -f "${SOCK}.holder" 2>/dev/null || true
 
 echo ""
 echo "═══ arinanoTouch ended ═══"
-echo "Tekan Enter..."
-read -r _ 2>/dev/null || true
+if [ -t 0 ]; then
+    echo "Tekan Enter..."
+    read -r _ 2>/dev/null || true
+fi

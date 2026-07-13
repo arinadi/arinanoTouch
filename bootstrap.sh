@@ -5,6 +5,13 @@
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
 
+# ── Detect interactive vs pipe ────────────────────────────────
+if [ -t 0 ]; then
+    INTERACTIVE=true
+else
+    INTERACTIVE=false
+fi
+
 echo "╔══════════════════════════════════════════════════════╗"
 echo "║  📱 arinanoTouch — SXMO on Termux                  ║"
 echo "╚══════════════════════════════════════════════════════╝"
@@ -29,9 +36,13 @@ if [ "$ANDROID_VERSION" -lt 31 ] 2>/dev/null; then
     echo "  Your device: Android SDK $ANDROID_VERSION"
     echo "  SXMO WILL run but with software rendering only (slow)."
     echo ""
-    echo "  Continue anyway? (y/n)"
-    read -r confirm
-    [ "$confirm" != "y" ] && echo "Aborted." && exit 0
+    if $INTERACTIVE; then
+        echo "  Continue anyway? (y/n)"
+        read -r confirm
+        [ "$confirm" != "y" ] && echo "Aborted." && exit 0
+    else
+        echo "  (non-interactive — continuing with software rendering)"
+    fi
 fi
 
 # ── Phantom Process Killer — wajib fix, bukan sekedar catatan ─
@@ -51,11 +62,13 @@ if [ "$ANDROID_VERSION" -ge 31 ] 2>/dev/null; then
         echo ""
         echo "  Atau: Settings → Developer Options → Disable child process restrictions"
         echo ""
-        echo "  Setelah fix, jalankan ulang bootstrap ini."
-        echo ""
-        echo "  Abort? (y/n)"
-        read -r confirm
-        [ "$confirm" != "n" ] && echo "Aborted." && exit 1
+        if $INTERACTIVE; then
+            echo "  Abort? (y/n)"
+            read -r confirm
+            [ "$confirm" != "n" ] && echo "Aborted." && exit 1
+        else
+            echo "  (non-interactive — continuing anyway, SXMO may be killed under load)"
+        fi
     else
         echo "  ✓ Phantom Killer sudah di-fix"
     fi

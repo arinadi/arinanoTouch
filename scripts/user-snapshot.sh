@@ -14,6 +14,13 @@ MAX_SNAPSHOTS=3
 CMD="${1:-list}"
 SNAP_ID="${2:-}"
 
+# ── TTY detection ────────────────────────────────────────────
+if [ -t 0 ]; then
+    INTERACTIVE=true
+else
+    INTERACTIVE=false
+fi
+
 # ── create ───────────────────────────────────────────────────
 do_create() {
     # Generate manifest first
@@ -87,8 +94,13 @@ do_restore() {
     
     echo ">>> Restoring snapshot: $SNAP_ID"
     echo "    ⚠ This will overwrite /home/admin."
-    read -p "    Continue? [y/N] " confirm
-    case "$confirm" in [yY]*) ;; *) echo "    Cancelled."; exit 0 ;; esac
+    if $INTERACTIVE; then
+        read -p "    Continue? [y/N] " confirm
+        case "$confirm" in [yY]*) ;; *) echo "    Cancelled."; exit 0 ;; esac
+    else
+        echo "    (non-interactive — skipping restore)"
+        exit 1
+    fi
     
     rsync -a --delete "$SNAP_PATH/" "$HOME_SRC/" 2>&1 | tail -2
     ln -sf "$SNAP_PATH" "$HOME/.arinanotouch/snapshot-current"
