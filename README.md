@@ -1,25 +1,31 @@
 <div align="center">
-  <h1>📱 arinanoTouch</h1>
-  <p><strong>Your phone runs a mobile-native desktop — SXMO (dwm) on Debian 13.</strong></p>
+  <h1>📦 arinanoTouch — ARCHIVED</h1>
+  <p><strong>Eksperimen SXMO (dwm) di Termux proot — tidak dilanjutkan.</strong></p>
   <p>
-    <a href="https://github.com/arinadi/arinanoTouch/actions"><img src="https://img.shields.io/github/actions/workflow/status/arinadi/arinanoTouch/build-image.yml?label=build"></a>
-    <a href="https://github.com/arinadi/arinanoTouch/blob/main/LICENSE"><img src="https://img.shields.io/github/license/arinadi/arinanoTouch"></a>
-  </p>
-
-  ```bash
-# Recommended — git pull + run (interaktif, bisa pilih opsi)
-git clone https://github.com/arinadi/arinanoTouch.git ~/arinanoTouch
-cd ~/arinanoTouch && bash bootstrap.sh
-
-# Quick — pipe from URL (non-interactive, auto-skip prompts)
-curl -sL https://raw.githubusercontent.com/arinadi/arinanoTouch/main/bootstrap.sh | bash
-```
-
-  <p>
-    Debian 13 &nbsp;·&nbsp; SXMO &nbsp;·&nbsp; dwm &nbsp;·&nbsp; Firefox ESR &nbsp;·&nbsp; Dev tools<br>
-    <small>Termux&nbsp;→&nbsp;X11&nbsp;→&nbsp;dwm (SXMO) — no nested compositor</small>
+    <strong>Gunakan <a href="https://github.com/arinadi/arinanoX">arinanoX</a> (XFCE)</strong> yang sudah terbukti stabil.
   </p>
 </div>
+
+---
+
+## 🛑 Archived
+
+Setelah PoC, SXMO via proot menemui masalah struktural yang tidak bisa diatasi tanpa rewrite besar:
+
+| Masalah | Detail |
+|---------|--------|
+| **lisgd** | Butuh `/dev/input/touchscreen` — tidak ada di proot/Termux:X11 |
+| **Dbus** | Session bus bermasalah di lingkungan proot tanpa systemd |
+| **sxmo_migrate** | Overwrite konfigurasi user secara agresif |
+| **Hardware access** | SXMO diasumsikan jalan di hardware asli (PinePhone), bukan container |
+
+**Kesimpulan:** SXMO tidak cocok untuk dijalankan di dalam proot. arsitektur XFCE (arinanoX) jauh lebih cocok karena tidak memiliki dependensi pada hardware-specific device nodes, dbus session bus yang kompleks, atau migrasi konfigurasi yang agresif.
+
+---
+
+## ✅ Rekomendasi
+
+Pakai [**arinanoX**](https://github.com/arinadi/arinanoX) — XFCE desktop di Termux proot, GPU-accelerated, sudah production-ready.
 
 ---
 
