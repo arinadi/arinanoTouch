@@ -11,19 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # ── Layer 2: SXMO SHELL (X11/dwm) + BROWSER ──────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # SXMO: utility scripts & hooks
     sxmo-utils \
-    # SXMO: core X11 components (not auto-depended due to --no-install-recommends)
-    dwm dmenu stterm lisgd svkbd \
-    # Runtime deps
+    dwm dmenu stterm lisgd svkbd-x11 wvkbd \
     dbus-x11 pulseaudio-utils netcat-openbsd x11-xserver-utils \
-    # Browser
     firefox-esr firefox-esr-mobile-config \
-    # Fonts
     fonts-noto fonts-noto-color-emoji \
-    # GPU / GL
     mesa-utils glmark2 libgl1 librsvg2-common \
-    # Utilities
     xdotool gnupg yad && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
