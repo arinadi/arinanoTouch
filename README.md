@@ -7,6 +7,11 @@
   </p>
 
   ```bash
+# Recommended — git pull + run (interaktif, bisa pilih opsi)
+git clone https://github.com/arinadi/arinanoTouch.git ~/arinanoTouch
+cd ~/arinanoTouch && bash bootstrap.sh
+
+# Quick — pipe from URL (non-interactive, auto-skip prompts)
 curl -sL https://raw.githubusercontent.com/arinadi/arinanoTouch/main/bootstrap.sh | bash
 ```
 
