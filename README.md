@@ -1,8 +1,7 @@
 <div align="center">
   <h1>📱 arinanoTouch</h1>
-  <p><strong>Your phone runs a mobile-native desktop — Phosh on Debian 13.</strong></p>
+  <p><strong>Your phone runs a mobile-native desktop — SXMO (dwm) on Debian 13.</strong></p>
   <p>
-    <a href="https://arinano.work"><img src="https://img.shields.io/badge/site-arinano.work-blue"></a>
     <a href="https://github.com/arinadi/arinanoTouch/actions"><img src="https://img.shields.io/github/actions/workflow/status/arinadi/arinanoTouch/build-image.yml?label=build"></a>
     <a href="https://github.com/arinadi/arinanoTouch/blob/main/LICENSE"><img src="https://img.shields.io/github/license/arinadi/arinanoTouch"></a>
   </p>
@@ -12,8 +11,8 @@ curl -sL https://raw.githubusercontent.com/arinadi/arinanoTouch/main/bootstrap.s
 ```
 
   <p>
-    Debian 13 &nbsp;·&nbsp; Phosh &nbsp;·&nbsp; Firefox ESR &nbsp;·&nbsp; Dev tools<br>
-    <small>TermuX&nbsp;→&nbsp;X11&nbsp;→&nbsp;Openbox&nbsp;→&nbsp;Cage&nbsp;→&nbsp;Phoc&nbsp;→&nbsp;Phosh</small>
+    Debian 13 &nbsp;·&nbsp; SXMO &nbsp;·&nbsp; dwm &nbsp;·&nbsp; Firefox ESR &nbsp;·&nbsp; Dev tools<br>
+    <small>Termux&nbsp;→&nbsp;X11&nbsp;→&nbsp;dwm (SXMO) — no nested compositor</small>
   </p>
 </div>
 
@@ -21,16 +20,20 @@ curl -sL https://raw.githubusercontent.com/arinadi/arinanoTouch/main/bootstrap.s
 
 ## ⚡ Why
 
-arinanoTouch brings the **native mobile shell experience** to your Android device. Unlike desktop environments forced onto touchscreens, [Phosh](https://phosh.mobi) is designed for phones — swipe gestures, app drawer, lock screen, on-screen keyboard. Built on the same declarative, prebuilt-image foundation as [arinanoX](https://github.com/arinadi/arinanoX).
+arinanoTouch brings the **native mobile shell experience** to your Android device. Unlike desktop environments forced onto touchscreens, [SXMO](https://sxmo.org) is designed for phones — gesture swipe (`lisgd`), menu lewat tombol hardware, on-screen keyboard adaptif (`svkbd`/`wvkbd`), window manager dwm.
+
+Built on the same declarative, prebuilt-image foundation as [arinanoX](https://github.com/arinadi/arinanoX).
 
 | | arinanoTouch |
 |---|---|
-| 📱 | **Mobile-native.** Phosh shell — not a desktop forced onto touch. |
+| 📱 | **Mobile-native.** SXMO shell — not a desktop forced onto touch. |
 | 🏗️ | **Declarative.** Single Dockerfile defines the entire system. |
-| ⚡ | **Prebuilt.** 580MB image from CI. Extract and run — 30 seconds. |
+| ⚡ | **Prebuilt.** Image from CI. Extract and run — fast. |
 | 🔄 | **Atomic.** Updates to a fresh image. Old one kept as backup. Instant rollback. |
-| 🎯 | **Proot-aware.** Nested compositor (Openbox→Cage→Phoc). No seatd/logind needed. |
+| 🎯 | **X11 murni.** No nested Wayland compositor — arsitektur identik dengan arinanoX (XFCE) yang sudah terbukti jalan. |
 | 📱 | **Termux:API.** Battery, clipboard, voice, camera — from inside proot. |
+
+> **v0.1 experimental** — dibangun dan diuji di Samsung Galaxy S24 FE (Exynos 2400e, Xclipse 940).
 
 ---
 
@@ -52,29 +55,28 @@ arinanoTouch brings the **native mobile shell experience** to your Android devic
 │  Preserved across updates            │
 ├─────────────────────────────────────┤
 │  CORE LAYER (declarative)            │  ← Built from Dockerfile in CI
-│  Debian 13 + Phosh + Phoc + dev      │     ghcr.io/arinadi/arinanotouch
+│  Debian 13 + SXMO (dwm) + dev tools  │     ghcr.io/arinadi/arinanotouch
 └─────────────────────────────────────┘
 ```
 
-### Compositor Chain
-
-Phosh needs a Wayland compositor — but proot has no systemd, no seatd, no logind. The solution: a **nested compositor chain** that delegates hardware access to Termux:X11:
+### Architecture
 
 ```
 Termux:X11 (X server, Android side)
-  └─ Openbox  (WM, fixes resolution detection)
-       └─ Cage  (Wayland-in-X11 compositor)
-            └─ Phoc  (wlroots Wayland compositor)
-                 └─ Phosh  (mobile shell)
+  └─ dwm (SXMO) — X11 native, no Wayland involved
+       └─ svkbd/wvkbd (on-screen keyboard)
+       └─ lisgd (gesture daemon — swipe navigation)
+       └─ dmenu (launcher menu, triggered by hardware button)
+       └─ Firefox ESR + mobile config
 ```
 
-Phoc runs as a simple Wayland client inside Cage's socket — never touches `/dev/dri/*` directly. GPU and input are delegated up the chain to Termux:X11. **No seatd, no logind required.**
+SXMO berjalan sebagai **X11 client langsung di atas Termux:X11** — tidak ada chain compositor. Pola ini identik dengan XFCE di arinanoX yang sudah stabil. GPU dan input diteruskan langsung ke Termux:X11.
 
 ### GPU Acceleration (virglrenderer)
 
 | GPU | Flag | Priority |
 |-----|------|----------|
-| Xclipse (Exynos RDNA2) | `--angle-vulkan` | Tier 1 |
+| Xclipse (Exynos RDNA2) | `--angle-vulkan` | Tier 1 — **wajib** |
 | Adreno / Mali / Others | `virgl_test_server_android` | Tier 1 |
 | Any (null backend) | `virgl_test_server --use-egl-surfaceless` | Tier 2 |
 | CPU fallback | `LIBGL_ALWAYS_SOFTWARE=1` | Tier 3 |
@@ -86,7 +88,7 @@ Phoc runs as a simple Wayland client inside Cage's socket — never touches `/de
 ## 🚀 Usage
 
 ```bash
-arinanotouch start        # Launch Phosh desktop
+arinanotouch start        # Launch SXMO desktop
 arinanotouch stop         # Stop everything
 arinanotouch status       # System overview
 arinanotouch doctor       # Full health-check
@@ -105,7 +107,7 @@ arinanotouch help         # All commands
 
 ### Input / Keyboard
 
-Squeekboard is installed as the default on-screen keyboard but [known to be problematic inside proot](https://ivonblog.com/en-us/posts/postmarketos-in-termux-proot/). **Fallback:** press the Android back button to bring up the system keyboard.
+SXMO menggunakan **svkbd**/**wvkbd** sebagai on-screen keyboard bawaan, diaktifkan otomatis melalui hook `sxmo_hooks`. **Fallback:** tekan tombol back Android untuk memunculkan system keyboard.
 
 ### Right-Click on Touchscreen
 
@@ -138,28 +140,13 @@ extra-keys = [ \
 
 ---
 
-## ⚠️ Known Limitations
+## 🛑 Wajib: Android 12+ Phantom Process Killer & Xclipse GPU
 
-This is a **v0.1 experimental release**. The Phosh-in-proot approach is fragile — please read this before opening issues.
+**Kedua fix ini dijalankan otomatis oleh `bootstrap.sh` (pre-flight check).** Bukan sekadar catatan pasif.
 
-| # | Issue | Status |
-|---|-------|--------|
-| 1 | **Phosh may fail to start** occasionally, requiring a full Termux restart | Known. `stop.sh` kills everything cleanly. |
-| 2 | **Phantom Process Killer** (Android 12+) can kill Phosh under load — the Developer Options toggle may not be enough | Run the 3 ADB commands in `bootstrap.sh`. Fixed in §3. |
-| 3 | **Squeekboard broken in proot** — on-screen keyboard unreliable | Use Android keyboard (back button fallback). Documented. |
-| 4 | **GNOME Control Center / Software** likely won't open in proot | Configure via `gsettings` / `xdg-mime` / `apt` manually. |
-| 5 | **Auto-rotation** (portrait/landscape) untested — proot can't access sensors directly | Fixed orientation only in v0.1. |
-| 6 | **Nested compositor overhead** (Openbox→Cage→Phoc) vs direct X11 (XFCE) — not yet benchmarked | To be measured. |
-| 7 | **(Xclipse only) Wrong virgl flag** → black screen with cursor | Use `--angle-vulkan`, not plain `virgl_test_server`. |
-| 8 | **firefox-esr** may be auto-removed in Debian trixie due to RC bugs | Check package status during build; fallback to GNOME Web. |
-| 9 | **Vulkan ICD layer** installed outside Dockerfile → black screen | Don't install ICD manually. |
-| 10 | Android 8-11: **software rendering only**, UI may crash | Not recommended. |
+### 1. Disable Phantom Process Killer (via ADB)
 
----
-
-## 🛑 Android 12+ Phantom Process Killer
-
-**Required** for reliable operation on Samsung Exynos devices:
+Lebih reliable dari toggle Developer Options. Diperlukan untuk Samsung Exynos devices:
 
 ```bash
 adb shell "/system/bin/device_config set_sync_disabled_for_tests persistent"
@@ -167,7 +154,25 @@ adb shell "/system/bin/device_config put activity_manager max_phantom_processes 
 adb shell settings put global settings_enable_monitor_phantom_procs false
 ```
 
-Also: Developer Options → Disable child process restrictions.
+Sumber: [mshzhb/android-glibc-samsung-exynos](https://github.com/mshzhb/android-glibc-samsung-exynos)
+
+### 2. GPU: Wajib flag `--angle-vulkan`
+
+Untuk Xclipse (Exynos RDNA2), **jangan** jalankan `virgl_test_server` tanpa flag, dan **jangan** instal Vulkan ICD layer manual di luar Dockerfile — pernah dilaporkan menyebabkan black screen cuma cursor muncul. Kami handle ini di `launchers/start.sh`.
+
+---
+
+## ⚠️ Known Limitations
+
+| # | Issue | Status |
+|---|-------|--------|
+| 1 | **Phantom Process Killer** (Android 12+) dapat kill SXMO/dwm saat render berat | Fix ADB 3 commands wajib dijalankan. `bootstrap.sh` cek secara aktif. |
+| 2 | **Xclipse GPU** — flag `--angle-vulkan` wajib; tanpa flag atau install ICD manual → black screen | Handle otomatis di `start.sh`. |
+| 3 | **Auto-rotation** (portrait/landscape) — proot tidak bisa akses sensor Android langsung | Fixed orientation only di v0.1. |
+| 4 | **`firefox-esr`** mungkin di-auto-removal di Debian trixie karena RC bugs | Cek status saat build; fallback GNOME Web. |
+| 5 | **`sxmo-utils`** di Debian adalah community package, bukan jalur resmi (resminya postmarketOS) | Bagian yang kita pakai (dwm/dmenu/lisgd/svkbd) tidak menyentuh fitur telephony yang rawan breakage. |
+| 6 | **Gesture `lisgd`** didesain untuk tombol volume/power PinePhone — mapping tombol Android bisa beda | Perlu validasi di S24 FE saat PoC; override config tersedia. |
+| 7 | Android 8-11: **software rendering only**, UI mungkin crash | Tidak direkomendasikan. |
 
 ---
 
@@ -175,15 +180,25 @@ Also: Developer Options → Disable child process restrictions.
 
 ```
 arinanoTouch/
-├── bootstrap.sh          ← one-command entry point
+├── bootstrap.sh          ← one-command entry point (dengan pre-flight checks)
 ├── image/                ← System definition (Dockerfile)
-│   ├── Dockerfile        ←   4 layers: base, Phosh, dev, user
-│   └── configs-target/    ←     autostart, tools, bashrc
+│   ├── Dockerfile        ←   4 layers: base, SXMO, dev, user
+│   └── configs-target/   ←     SXMO config, tools, bashrc
 ├── scripts/              ← setup, rollback, status, doctor
 ├── launchers/            ← start/stop shortcuts
 ├── docs/
 └── .github/workflows/    ← CI → GHCR image on push
 ```
+
+---
+
+## Roadmap
+
+1. ✅ PoC di Samsung Galaxy S24 FE — `sxmo-utils` via Termux:X11
+2. ⬜ Validasi gesture/tombol hardware, sesuaikan config SXMO
+3. ⬜ Setup CI → push ke GHCR
+4. ⬜ Rilis v0.1 (experimental)
+5. ⬜ Kumpulkan feedback sebelum pertimbangkan RDP (v0.2)
 
 ---
 
@@ -195,10 +210,11 @@ GPLv3 — see [LICENSE](LICENSE).
 
 ## 🔗 References
 
-- [arinanoX](https://github.com/arinadi/arinanoX) — parent project (XFCE desktop)
-- [postmarketOS in Termux proot](https://ivonblog.com/en-us/posts/postmarketos-in-termux-proot/) — nested compositor technique
-- [Phosh](https://phosh.mobi) — mobile shell
-- [Debian Mobile](https://wiki.debian.org/Mobile) — Phosh in Debian
-- [Xclipse GPU findings](https://github.com/phoenixbyrd/Termux_XFCE/issues/85) — community thread
-- [dw5/termux-phosh](https://github.com/dw5/termux-phosh) — precedent project (archived)
-- [olivia1246/postmarketOS-termux](https://github.com/olivia1246/postmarketOS-termux) — precedent project
+- [arinanoX](https://github.com/arinadi/arinanoX) — parent project (XFCE desktop), struktur & Dockerfile sumber
+- [SXMO](https://sxmo.org) · [Install docs](https://sxmo.org/docs/install/) — situs resmi
+- [Debian sxmo-utils package](https://packages.debian.org/trixie/sxmo-utils) — konfirmasi paket resmi trixie
+- [sxmo man page](https://manpages.debian.org/experimental/sxmo-utils/sxmo.7) — dokumentasi lengkap
+- [LWN review SXMO](https://lwn.net/Articles/981320/) — ulasan mendalam
+- [Xclipse GPU findings](https://github.com/phoenixbyrd/Termux_XFCE/issues/85) — root cause & fix
+- [ADB phantom process killer fix](https://github.com/mshzhb/android-glibc-samsung-exynos) — sumber fix
+- [Termux-UbuntuBox](https://github.com/RobertSzujo/Termux-UbuntuBox) — konfirmasi GPU Xclipse 920

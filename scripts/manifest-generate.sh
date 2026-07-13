@@ -47,9 +47,7 @@ sudo
 tmux
 wget
 xdotool
-xfce4
-xfce4-goodies
-xfce4-terminal
+sxmo-utils
 xorg
 yad
 BASE
@@ -64,7 +62,7 @@ EXTRA=$(cat "$EXTRA_FILE" 2>/dev/null | head -30 | tr '\n' ' ')
 # ── Detect custom dotfiles ──────────────────────────────────
 DOTFILES=""
 for df in .bashrc .bash_aliases .gitconfig .config/gtk-3.0/gtk.css \
-           .config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml; do
+           .config/sxmo/; do
     src="$ROOTFS/home/admin/$df"
     if [ -f "$src" ]; then
         # Check if file differs from shipped config (skip if identical to configs-target)
@@ -74,7 +72,7 @@ done
 
 # ── Detect custom themes/icons ──────────────────────────────
 THEMES=""
-for d in Orchis-Dark elementary-xfce-hidpi Orchis-Dark-xhdpi; do
+for d in Orchis-Dark; do
     if [ -d "$ROOTFS/usr/share/themes/$d" ]; then
         THEMES="$THEMES\n    - $d"
     fi
@@ -99,14 +97,11 @@ $(echo "$EXTRA" | tr ' ' '\n' | grep -v "^$" | sed 's/^/  - /')
 # Custom dotfiles (tracked for backup/sync)
 dotfiles:$(echo -e "$DOTFILES")
 
-# XFCE config files to preserve
-xfce_config:
-  - xfce4-panel.xml
-  - xfwm4.xml
-  - xsettings.xml
-  - xfce4-desktop.xml
-  - xfce4-keyboard-shortcuts.xml
-  - thunar.xml
+# SXMO config files to preserve
+sxmo_config:
+  - profile
+  - xinit
+  - hooks/
 YAML
 
 echo ""

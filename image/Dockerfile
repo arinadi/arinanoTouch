@@ -1,10 +1,5 @@
 FROM debian:13
 
-# ═══════════════════════════════════════════════════════════════
-# arinanoTouch — Mobile-native desktop via Phosh on Debian 13
-# Layer strategy: 4 layers (minimal, like arinanoX)
-# ═══════════════════════════════════════════════════════════════
-
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 # ── Layer 1: BASE (identical to arinanoX) ────────────────────
@@ -14,22 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get upgrade -y -o Dpkg::Options::='--force-confold' && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ── Layer 2: PHOSH SHELL + COMPOSITOR + BROWSER ──────────────
+# ── Layer 2: SXMO SHELL (X11/dwm) + BROWSER ──────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Phosh shell + compositor
-    phosh phoc squeekboard \
-    # Nested compositor stack
-    openbox cage \
-    # Runtime deps
+    sxmo-utils \
     dbus-x11 pulseaudio-utils netcat-openbsd x11-xserver-utils \
-    # Browser (mobile-config for touch-friendly UI)
     firefox-esr firefox-esr-mobile-config \
-    # Fonts + backgrounds + gsettings schemas
     fonts-noto fonts-noto-color-emoji \
-    gnome-settings-daemon-common gnome-backgrounds \
-    # GPU / GL tools
     mesa-utils glmark2 libgl1 librsvg2-common \
-    # Right-click + utilities
     xdotool gnupg yad && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 

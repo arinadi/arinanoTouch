@@ -54,7 +54,7 @@ if [ -d "$ROOTFS/home/admin" ]; then
     echo "  ${GREEN} arinanotouch (${SIZE:-?})"
     
     # Check core packages inside
-    for bin in firefox-esr xfce4-session; do
+    for bin in firefox-esr sxmo_xinit.sh; do
         if proot-distro login arinanotouch -- which "$bin" &>/dev/null; then
             echo "  ${GREEN}   $bin"
         else
@@ -106,10 +106,10 @@ else
     WARNS=$((WARNS + 1))
 fi
 
-if pgrep -f "xfce4-session" &>/dev/null; then
-    echo "  ${GREEN} XFCE session active"
+if pgrep -f "dwm" &>/dev/null; then
+    echo "  ${GREEN} SXMO/dwm session active"
 else
-    echo "  ${DIM} XFCE not running"
+    echo "  ${DIM} SXMO/dwm not running"
 fi
 
 # ── Updates ─────────────────────────────────────────────────

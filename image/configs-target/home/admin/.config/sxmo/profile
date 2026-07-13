@@ -1,0 +1,10 @@
+#
+# arinanoTouch SXMO config — ~/.config/sxmo/
+# Overrides default configs from /usr/share/sxmo/
+#
+
+# ── X11 init ──────────────────────────────────────────────────
+# sxmo_xinit.sh will source this if it exists
+export SXMO_TOUCH_SIZE_MULTIPLIER=2     # bigger touch targets
+export SXMO_SWAY_SCALE=1                # not used on X11, but set anyway
+export SXMO_MENU_FONT="Noto Sans 14"    # readable font size

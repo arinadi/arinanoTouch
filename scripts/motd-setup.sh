@@ -6,7 +6,7 @@ echo ">>> Setting up MOTD..."
 cat > /data/data/com.termux/files/usr/etc/motd << 'MOTDEOF'
 
 ==========================================
- 📱 arinanoTouch Proot XFCE
+ 📱 arinanoTouch Proot SXMO
 ==========================================
 
  Start:

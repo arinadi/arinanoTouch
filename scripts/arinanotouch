@@ -6,10 +6,10 @@
 SCRIPTS="${HOME}/.arinanotouch/scripts"
 
 show_help() {
-    echo "arinanoTouch — Phosh mobile desktop on Termux"
+    echo "arinanoTouch — SXMO mobile desktop on Termux"
     echo ""
     echo "Commands:"
-    echo "  start       Launch Phosh desktop"
+    echo "  start       Launch SXMO desktop"
     echo "  stop        Stop everything"
     echo "  status      System overview"
     echo "  doctor      Full health-check"
@@ -56,7 +56,6 @@ case "${1:-help}" in
             echo "Re-bootstrapping..."
             curl -sL https://raw.githubusercontent.com/arinadi/arinanoTouch/main/bootstrap.sh | bash
         }
-        # Re-apply user manifest
         if [ -f "${HOME}/.arinanotouch/user-manifest.yaml" ]; then
             ${SCRIPTS}/manifest-apply.sh 2>/dev/null
         fi

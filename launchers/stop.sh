@@ -5,13 +5,13 @@
 
 echo ">>> Stopping arinanoTouch..."
 
-# ── Phosh/Phoc/Cage/Openbox (inside proot) ────────────────────
-echo "  [*] Killing compositor chain..."
-for proc in phosh phoc cage openbox squeekboard; do
+# ── SXMO/dwm (inside proot) ───────────────────────────────────
+echo "  [*] Killing SXMO..."
+for proc in dwm sxmo_xinit sxmo_hooks lisgd svkbd-wvkbd-master svkbd-wvkbd; do
     pkill -f "$proc" 2>/dev/null && echo "  [x] $proc" || true
 done
-sleep 1
-for proc in phosh phoc cage openbox squeekboard; do
+sleep 0.5
+for proc in dwm sxmo_xinit sxmo_hooks lisgd svkbd; do
     pkill -9 -f "$proc" 2>/dev/null || true
 done
 
@@ -28,7 +28,6 @@ ROOTFS="/data/data/com.termux/files/usr/var/lib/proot-distro/containers/arinanot
 if [ -d "$ROOTFS" ]; then
     echo "  [*] Cleaning temp files..."
     rm -rf "$ROOTFS/tmp/"{.X*,dbus-*,ssh-*,xdg-*} 2>/dev/null || true
-    rm -f "$ROOTFS/tmp/.dbus"* 2>/dev/null || true
     rm -rf "$ROOTFS/home/admin/.cache/"* 2>/dev/null || true
 fi
 

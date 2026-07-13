@@ -1,38 +1,36 @@
 #!/usr/bin/env python3
-"""Hold X11 connection so socket stays alive for proot to connect.
-
-XWayland removes the X11 socket when no clients are connected.
-This script connects and holds the socket open until killed.
 """
-import socket, sys, time, os, signal
+x11-holder.py — Menjaga X11 Unix socket tetap hidup selama proot startup.
+Saat termux-x11 di-restart, socket bisa hilang sebelum proot connect.
+Holder ini membuka socket sebagai client dan hold file marker.
+"""
+import sys
+import os
+import socket
+import time
 
-sock_path = sys.argv[1]
+sock_path = sys.argv[1] if len(sys.argv) > 1 else '/data/data/com.termux/files/usr/tmp/.X11-unix/X0'
+marker_path = sock_path + '.holder'
 
-s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-s.settimeout(5)
-s.connect(sock_path)
-
-# Minimal X11 connection setup (no auth)
-s.send(b'l\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-d = s.recv(8)
-
-# Signal parent we're connected
-with open(sock_path + '.holder', 'w') as f:
+# Write marker
+with open(marker_path, 'w') as f:
     f.write(str(os.getpid()))
 
-# Ignore SIGINT/SIGTERM so parent can kill us cleanly
-signal.signal(signal.SIGTERM, lambda *_: exit(0))
-signal.signal(signal.SIGINT, lambda *_: exit(0))
-
-# Hold until killed — periodic recv to detect disconnection
+# Connect and hold
 try:
-    while True:
-        time.sleep(30)
-except (BrokenPipeError, OSError):
-    pass
-finally:
-    s.close()
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(30)
+    s.connect(sock_path)
+    # Keep alive until stdin closes (or termux-x11 restart kills us)
     try:
-        os.unlink(sock_path + '.holder')
-    except OSError:
+        sys.stdin.read()
+    except (EOFError, KeyboardInterrupt):
+        pass
+    s.close()
+except Exception as e:
+    print(f"holder: {e}", file=sys.stderr)
+finally:
+    try:
+        os.unlink(marker_path)
+    except FileNotFoundError:
         pass

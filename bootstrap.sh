@@ -1,12 +1,12 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ═══════════════════════════════════════════════════════════════
 # arinanoTouch — Bootstrap (one-command install)
-# Debian 13 + Phosh mobile desktop in Termux proot
+# Debian 13 + SXMO (dwm) mobile shell in Termux proot
 # ═══════════════════════════════════════════════════════════════
 set -uo pipefail
 
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║  📱 arinanoTouch — Phosh on Termux                 ║"
+echo "║  📱 arinanoTouch — SXMO on Termux                  ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""
 
@@ -21,33 +21,59 @@ BIN_DIR="${HOME}/.arinanotouch/bin"
 
 echo ">>> [0/4] Pre-flight checks..."
 
-# Android 12+ required for VirGL
+# ── Android version ──────────────────────────────────────────
 ANDROID_VERSION=$(getprop ro.build.version.sdk 2>/dev/null || echo "0")
 if [ "$ANDROID_VERSION" -lt 31 ] 2>/dev/null; then
     echo ""
     echo "  ⚠ WARNING: Android 12+ recommended for GPU acceleration."
     echo "  Your device: Android SDK $ANDROID_VERSION"
-    echo "  Phosh WILL run but with software rendering only (slow)."
+    echo "  SXMO WILL run but with software rendering only (slow)."
     echo ""
     echo "  Continue anyway? (y/n)"
     read -r confirm
     [ "$confirm" != "y" ] && echo "Aborted." && exit 0
-    SOFTWARE_RENDER=true
-else
-    SOFTWARE_RENDER=false
 fi
 
-# Phantom Process Killer (Android 12+)
+# ── Phantom Process Killer — wajib fix, bukan sekedar catatan ─
 if [ "$ANDROID_VERSION" -ge 31 ] 2>/dev/null; then
     echo "  • Phantom Process Killer check..."
-    echo "    If Phosh crashes/fails to start, run:"
-    echo "    adb shell \"/system/bin/device_config set_sync_disabled_for_tests persistent\""
-    echo "    adb shell \"/system/bin/device_config put activity_manager max_phantom_processes 2147483647\""
-    echo "    adb shell settings put global settings_enable_monitor_phantom_procs false"
+    MAX_PHANTOM=$(/system/bin/device_config get activity_manager max_phantom_processes 2>/dev/null || echo "")
+    if [ "$MAX_PHANTOM" != "2147483647" ]; then
+        echo ""
+        echo "  ⚠ Phantom Process Killer masih aktif!"
+        echo "  SXMO bisa di-kill Android tanpa warning jika ini tidak di-fix."
+        echo ""
+        echo "  Jalankan ADB dari PC/Laptop:"
+        echo ""
+        echo '    adb shell "/system/bin/device_config set_sync_disabled_for_tests persistent"'
+        echo '    adb shell "/system/bin/device_config put activity_manager max_phantom_processes 2147483647"'
+        echo '    adb shell settings put global settings_enable_monitor_phantom_procs false'
+        echo ""
+        echo "  Atau: Settings → Developer Options → Disable child process restrictions"
+        echo ""
+        echo "  Setelah fix, jalankan ulang bootstrap ini."
+        echo ""
+        echo "  Abort? (y/n)"
+        read -r confirm
+        [ "$confirm" != "n" ] && echo "Aborted." && exit 1
+    else
+        echo "  ✓ Phantom Killer sudah di-fix"
+    fi
 fi
 
-# Check for required packages
-echo "  • Checking dependencies..."
+# ── GPU: VirGL + ANGLE check ─────────────────────────────────
+echo "  • GPU check..."
+GPU_OK=false
+if command -v virgl_test_server_android &>/dev/null; then
+    echo "  ✓ virgl_test_server_android tersedia"
+    GPU_OK=true
+else
+    echo "  ⚠ virgl_test_server_android tidak ditemukan."
+    echo "    Akan diinstal via host-setup."
+fi
+
+# ── Dependencies ──────────────────────────────────────────────
+echo "  • Checking Termux dependencies..."
 DEPS=("proot-distro" "pulseaudio" "termux-x11")
 MISSING=()
 for dep in "${DEPS[@]}"; do
@@ -74,31 +100,18 @@ echo ">>> [1/4] Deploying scripts..."
 
 mkdir -p "$SCRIPTS_DIR" "$BIN_DIR" "${HOME}/.shortcuts"
 
-# Copy all scripts from repo
 SCRIPT_BASE="${HOME}/arinanoTouch/scripts"
-cp "${SCRIPT_BASE}/proot-setup.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/proot-rollback.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/proot-backup.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/proot-restore.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/status.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/doctor.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/seccomp-check.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/seccomp-fix.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/host-setup.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/launcher-gen.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/motd-setup.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/manifest-apply.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/manifest-generate.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/user-snapshot.sh" "$SCRIPTS_DIR/" 2>/dev/null
-cp "${SCRIPT_BASE}/arinanotouch" "$BIN_DIR/" 2>/dev/null
+for f in proot-setup.sh proot-rollback.sh proot-backup.sh proot-restore.sh \
+         status.sh doctor.sh seccomp-check.sh seccomp-fix.sh \
+         host-setup.sh launcher-gen.sh motd-setup.sh \
+         manifest-apply.sh manifest-generate.sh user-snapshot.sh; do
+    cp "${SCRIPT_BASE}/${f}" "$SCRIPTS_DIR/" 2>/dev/null || true
+done
+cp "${SCRIPT_BASE}/arinanotouch" "$BIN_DIR/" 2>/dev/null || true
 
-# Copy launchers
-cp "${HOME}/arinanoTouch/launchers/start.sh" "${HOME}/start.sh" 2>/dev/null
-cp "${HOME}/arinanoTouch/launchers/stop.sh" "${HOME}/stop.sh" 2>/dev/null
+chmod +x "$SCRIPTS_DIR"/*.sh "$BIN_DIR/"* 2>/dev/null || true
 
-chmod +x "$SCRIPTS_DIR"/*.sh "$BIN_DIR/"* "${HOME}/start.sh" "${HOME}/stop.sh" 2>/dev/null || true
-
-echo "  • Scripts deployed to ~/.arinanotouch/"
+echo "  ✓ Scripts deployed to ~/.arinanotouch/"
 
 # ═══════════════════════════════════════════════════════════════
 # Host setup
@@ -110,10 +123,10 @@ echo ">>> [2/4] Host setup..."
 if [ -f "${SCRIPTS_DIR}/host-setup.sh" ]; then
     bash "${SCRIPTS_DIR}/host-setup.sh"
 else
-    # Minimal setup
+    # Minimal fallback
     pkg install -y x11-repo 2>/dev/null || true
     pkg install -y termux-x11-nightly 2>/dev/null || true
-    pkg install -y virglrenderer-android 2>/dev/null || true
+    pkg install -y virglrenderer-android angle-android 2>/dev/null || true
     pkg install -y rsync 2>/dev/null || true
 fi
 
@@ -127,14 +140,10 @@ echo ">>> [3/4] Deploying proot image..."
 if [ -f "${SCRIPTS_DIR}/proot-setup.sh" ]; then
     bash "${SCRIPTS_DIR}/proot-setup.sh"
 else
-    # Fallback: manual pull
     echo "  Pulling from GHCR..."
     proot-distro remove "$CONTAINER" 2>/dev/null || true
-    
-    # Clear cache to force fresh pull
     rm -rf ~/.termux/proot-distro/oci_layers/* 2>/dev/null || true
     rm -rf ~/.termux/proot-distro/oci_manifests/* 2>/dev/null || true
-    
     proot-distro install -n "$CONTAINER" "$GHCR_IMAGE"
 fi
 
@@ -145,7 +154,6 @@ fi
 echo ""
 echo ">>> [4/4] Generating launchers..."
 
-# Widget shortcuts (real files, not symlinks)
 cp "${HOME}/arinanoTouch/launchers/start.sh" "${HOME}/.shortcuts/1-start-arinanotouch.sh" 2>/dev/null || true
 cp "${HOME}/arinanoTouch/launchers/stop.sh" "${HOME}/.shortcuts/0-stop-arinanotouch.sh" 2>/dev/null || true
 chmod +x "${HOME}/.shortcuts/"*.sh 2>/dev/null || true
@@ -159,9 +167,9 @@ fi
 
 echo ""
 echo "╔══════════════════════════════════════════════════════╗"
-echo "║  ✅ arinanoTouch installed!                         ║"
+echo "║  ✅ arinanoTouch (SXMO) installed!                  ║"
 echo "║                                                     ║"
-echo "║  arinanotouch start      # Launch Phosh desktop     ║"
+echo "║  arinanotouch start      # Launch SXMO desktop      ║"
 echo "║  arinanotouch stop       # Stop everything          ║"
 echo "║  arinanotouch status     # System overview          ║"
 echo "║  arinanotouch doctor     # Health check             ║"

@@ -3,6 +3,9 @@ name: Build & Push arinanoTouch Image
 on:
   push:
     branches: [main]
+    paths:
+      - 'image/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 env:
@@ -41,6 +44,8 @@ jobs:
           context: ./image
           platforms: linux/arm64
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:1.0.${{ github.run_number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

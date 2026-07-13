@@ -37,17 +37,14 @@ if grep -q "^packages:" "$MANIFEST" 2>/dev/null; then
     fi
 fi
 
-# ── Restore XFCE configs ────────────────────────────────────
-CONFIG_DIR="$HOME/.arinanotouch/snapshot-current/home/.config/xfce4/xfconf/xfce-perchannel-xml"
-TARGET_DIR="$ROOTFS/home/admin/.config/xfce4/xfconf/xfce-perchannel-xml"
+# ── Restore SXMO configs ────────────────────────────────────
+CONFIG_DIR="$HOME/.arinanotouch/snapshot-current/home/.config/sxmo"
+TARGET_DIR="$ROOTFS/home/admin/.config/sxmo"
 
 if [ -d "$CONFIG_DIR" ]; then
-    echo "  Restoring XFCE configs..."
+    echo "  Restoring SXMO configs..."
     mkdir -p "$TARGET_DIR"
-    for xml in xfce4-panel.xml xfwm4.xml xsettings.xml xfce4-desktop.xml \
-               xfce4-keyboard-shortcuts.xml thunar.xml; do
-        if [ -f "$CONFIG_DIR/$xml" ]; then
-            cp "$CONFIG_DIR/$xml" "$TARGET_DIR/$xml"
+    cp -r "$CONFIG_DIR/"* "$TARGET_DIR/" 2>/dev/null || true
             echo "    → $xml"
         fi
     done

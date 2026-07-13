@@ -1,0 +1,26 @@
+#!/bin/sh
+# ═══════════════════════════════════════════════════════════════
+# SXMO xinit override — arinanoTouch
+# Sourced by sxmo_xinit.sh at startup
+# ═══════════════════════════════════════════════════════════════
+
+# In proot, XDG_RUNTIME_DIR is /tmp
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+
+# Ensure dbus socket exists
+mkdir -p "${XDG_RUNTIME_DIR}"
+
+# PulseAudio over TCP
+export PULSE_SERVER="${PULSE_SERVER:-tcp:127.0.0.1:4713}"
+
+# GPU: virpipe (set by start.sh)
+export GALLIUM_DRIVER="${GALLIUM_DRIVER:-virpipe}"
+export MESA_GL_VERSION_OVERRIDE="${MESA_GL_VERSION_OVERRIDE:-4.1COMPAT}"
+export MESA_GLES_VERSION_OVERRIDE="${MESA_GLES_VERSION_OVERRIDE:-3.1}"
+export MESA_NO_ERROR="${MESA_NO_ERROR:-1}"
+export MESA_BACK_BUFFER="${MESA_BACK_BUFFER:-pixmap}"
+
+# Disable AT bridge (speeds up GTK)
+export NO_AT_BRIDGE="${NO_AT_BRIDGE:-1}"
+
+echo "  ✓ SXMO environment loaded (arinanoTouch)"
