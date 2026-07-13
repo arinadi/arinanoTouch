@@ -111,7 +111,7 @@ if [ -S "$VIRGL_SOCK" ]; then
         export MESA_BACK_BUFFER=pixmap
         rm -f /tmp/dbus-* 2>/dev/null
         mkdir -p /tmp/runtime-admin
-        dbus-launch --exit-with-session sxmo_xinit.sh
+        bash ~/.arinanotouch/sxmo-start.sh
     "
 else
     echo "  GPU: software"
@@ -121,9 +121,7 @@ else
         export PULSE_SERVER=tcp:127.0.0.1:4713
         export NO_AT_BRIDGE=1
         export LIBGL_ALWAYS_SOFTWARE=1
-        rm -f /tmp/dbus-* 2>/dev/null
-        mkdir -p /tmp/runtime-admin
-        dbus-launch --exit-with-session sxmo_xinit.sh
+        bash ~/.arinanotouch/sxmo-start.sh
     "
 fi
 

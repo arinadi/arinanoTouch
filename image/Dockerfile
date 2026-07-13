@@ -40,8 +40,8 @@ RUN useradd -m -s /bin/bash admin && \
 COPY configs-target/home/ /home/
 
 RUN chown -R admin:admin /home/admin && \
-    chmod +x /home/admin/.arinanotouch/tools/*.sh && \
-    chmod +x /home/admin/.config/sxmo/hooks/* && \
+    chmod +x /home/admin/.arinanotouch/tools/*.sh /home/admin/.arinanotouch/*.sh && \
+    chmod +x /home/admin/.config/sxmo/hooks/* 2>/dev/null || true && \
     sed -i 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 
 ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
